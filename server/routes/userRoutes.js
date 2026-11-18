@@ -47,7 +47,7 @@ router.post('/invite-friend', verifyAuth, async (req, res) => {
   }
 });
 
-// Получить вознаграждение (2% от баланса)
+// Получить вознаграждение (0.5% от баланса)
 router.post('/claim-reward', verifyAuth, claimReward);
 
 module.exports = router;

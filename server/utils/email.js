@@ -15,7 +15,7 @@ const mg = mailgun.client({
 async function sendVerificationEmail(email, code) {
   try {
     const messageData = {
-      from: 'no-reply@mg.happybit.live', // ДОЛЖЕН быть домен, подтвержденный Mailgun
+      from: 'sandbox95e95ab8342e4edca4afd8980298c0f9.mailgun.org', // ДОЛЖЕН быть домен, подтвержденный Mailgun
       to: email,
       subject: 'Your Email Verification Code',
       html: `

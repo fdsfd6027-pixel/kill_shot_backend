@@ -220,61 +220,130 @@ router.put('/updateAdminPassword',verifyAdmin, async (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-  const { email_address, adminPassword } = req.body;
-  const SECRET_KEY = process.env.ADMIN_SECRET_KEY || 'my_super_secret_key';  // Твой секретный ключ
-  const JWT_SECRET = process.env.JWT_SECRET || 'secret_key';
-
-  if (!email_address || !adminPassword) {
-    return res.status(400).json({ error: 'Email and password are required' });
-  }
-
   try {
-    let admin = await User.findOne({ email_address });
+    const { email_address, adminPassword } = req.body;
+    console.log('🔥🔥🔥 ADMIN LOGIN ROUTE HIT 🔥🔥🔥');
 
-    if (!admin) {
-      // Если администратора нет в базе, проверяем пароль для создания администратора
-      if (adminPassword !== SECRET_KEY) {
-        // Если введённый пароль не совпадает с SECRET_KEY, отправляем ошибку
-        return res.status(401).json({ error: 'Invalid secret key' });
-      }
-
-      // Если пароль совпадает с SECRET_KEY, создаём нового администратора
-      const hashedPassword = await bcrypt.hash(adminPassword, 12);
-      admin = new User({
-        email_address,
-        isAdmin: true,   // Устанавливаем флаг isAdmin как true для первого администратора
-        adminPassword: hashedPassword,
+    if (!email_address || !adminPassword) {
+      return res.status(400).json({
+        error: 'Email and password are required'
       });
-      await admin.save();
-
-      // Генерация JWT токена для нового администратора
-      const token = jwt.sign(
-        { id: admin._id, email_address: admin.email_address, isAdmin: admin.isAdmin },
-        JWT_SECRET,
-        { expiresIn: '1h' }
-      );
-
-      return res.json({ message: 'Admin created and login successful', token });
-    } else {
-      // Если администратор существует, проверяем правильность пароля
-      const isPasswordValid = await bcrypt.compare(adminPassword, admin.adminPassword);
-      if (!isPasswordValid) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      // Генерация JWT токена для существующего администратора
-      const token = jwt.sign(
-        { id: admin._id, email_address: admin.email_address, isAdmin: admin.isAdmin },
-        JWT_SECRET,
-        { expiresIn: '1h' }
-      );
-
-      return res.json({ message: 'Login successful', token });
     }
 
+    const SECRET_KEY = process.env.ADMIN_SECRET_KEY;
+
+    if (!SECRET_KEY) {
+      return res.status(500).json({
+        error: 'Admin secret key is not configured'
+      });
+    }
+
+    const email = email_address.toLowerCase().trim();
+
+    // Գտնում ենք արդեն գրանցված օգտատիրոջը
+    const user = await User.findOne({
+      email_address: email
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'Account not found. Please register first.'
+      });
+    }
+
+    // Պետք է email-ը հաստատված լինի
+    if (!user.verified) {
+      return res.status(403).json({
+        error: 'Please verify your email first'
+      });
+    }
+
+    // =====================================
+    // 1. ԱՌԱՋԻՆ ԱԴՄԻՆԻ ԱԿՏԻՎԱՑՈՒՄ
+    // =====================================
+
+    if (!user.isAdmin) {
+
+      // Ստուգում ենք՝ արդյոք արդեն ադմին կա համակարգում
+      const existingAdmin = await User.exists({
+        isAdmin: true
+      });
+
+      if (existingAdmin) {
+        return res.status(403).json({
+          error: 'This account is not an administrator'
+        });
+      }
+
+      // Ստուգում ենք քո գաղտնի բանալին
+      if (adminPassword !== SECRET_KEY) {
+        return res.status(401).json({
+          error: 'Invalid admin secret key'
+        });
+      }
+
+      // Գաղտնաբառը պահում ենք hash-ով
+      const hashedPassword = await bcrypt.hash(adminPassword, 12);
+
+      user.isAdmin = true;
+      user.adminPassword = hashedPassword;
+
+      await user.save();
+
+      console.log('First administrator activated:', email);
+    }
+
+    // =====================================
+    // 2. ԱՐԴԵՆ ԳՈՅՈՒԹՅՈՒՆ ՈՒՆԵՑՈՂ ԱԴՄԻՆ
+    // =====================================
+
+    else {
+
+      if (!user.adminPassword) {
+        return res.status(409).json({
+          error: 'Admin password is missing. Admin password setup is required.'
+        });
+      }
+
+      const isPasswordValid = await bcrypt.compare(
+        adminPassword,
+        user.adminPassword
+      );
+
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          error: 'Invalid admin password'
+        });
+      }
+    }
+
+    // =====================================
+    // 3. JWT TOKEN
+    // =====================================
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email_address: user.email_address,
+        isAdmin: true
+      },
+      JWT_SECRET,
+      {
+        expiresIn: '1h'
+      }
+    );
+
+    return res.status(200).json({
+      message: 'Admin login successful',
+      token
+    });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Admin login error:', err);
+
+    return res.status(500).json({
+      error: 'Internal server error'
+    });
   }
 });
 
@@ -303,6 +372,8 @@ router.put('/removeBinanceCode/:userId', verifyAdmin, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+
 
 
 module.exports = router;

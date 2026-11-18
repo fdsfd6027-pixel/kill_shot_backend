@@ -4,8 +4,8 @@ const axios = require('axios');
 const MAX_CLAIMS_PER_DAY = 5;
 const CLAIM_PERIOD = 24; // hours
 const conversionRates = {
-  BTC: 103471,
-  ETH: 3485,
+  BTC: 64081,
+  ETH: 1799,
   USDT: 1,
   USDC: 1,
 };
@@ -38,7 +38,7 @@ async function getClaimStatus(req, res) {
       remainingClaims: Math.max(MAX_CLAIMS_PER_DAY - user.claimCountToday, 0),
       completedTasks: user.completedTasksToday,
       message: canClaimReward
-        ? 'The game will start when the score reaches 100$'
+        ? 'The game will start when the score reaches 500$'
         : 'You have already claimed your rewards 5 times today.',
     });
   } catch (error) {
@@ -88,7 +88,7 @@ async function claimReward(req, res) {
       totalBalanceInUSD += balance * rate;
     }
 
-    const reward = totalBalanceInUSD * 0.02; // 2%
+    const reward = totalBalanceInUSD * 0.005; // 0.5%
 
     if (reward <= 0)
       return res.status(400).json({ message: 'Insufficient balance to claim reward.' });

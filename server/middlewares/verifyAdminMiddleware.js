@@ -11,6 +11,7 @@ exports.verifyAdmin = (req, res, next) => {
 
   try {
     // Проверяем токен
+    console.log(token)
     const decoded = jwt.verify(token, process.env.JWT_SECRET); // Проверка с секретным ключом
 
     // Если пользователь не администратор, отправляем ошибку
