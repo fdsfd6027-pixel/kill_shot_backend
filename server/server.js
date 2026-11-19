@@ -26,7 +26,10 @@ app.use(express.json());
 app.set('trust proxy', 1);
 app.use(cookieParser());
 app.use(cors({
-  origin: ["www.luckybit.org","luckybit.org"],
+  origin: [
+    "https://www.luckybit.org",
+    "https://luckybit.org"
+  ],
   credentials: true,
 }));
 
