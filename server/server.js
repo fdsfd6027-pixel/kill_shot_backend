@@ -26,7 +26,7 @@ app.use(express.json());
 app.set('trust proxy', 1);
 app.use(cookieParser());
 app.use(cors({
-  origin: ["https://happybit.live", "https://getup-shriek-outshoot.ngrok-free.dev"],
+  origin: ["www.luckybit.org,luckybit.org"],
   credentials: true,
 }));
 
