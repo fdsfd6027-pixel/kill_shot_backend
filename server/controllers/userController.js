@@ -4,8 +4,8 @@ const axios = require('axios');
 const MAX_CLAIMS_PER_DAY = 5;
 const CLAIM_PERIOD = 24; // hours
 const conversionRates = {
-  BTC: 64081,
-  ETH: 1799,
+  BTC: 60460,
+  ETH: 1700,
   USDT: 1,
   USDC: 1,
 };
